@@ -1,0 +1,18 @@
+ALTER TABLE todos
+    ADD COLUMN id_uuid UUID DEFAULT gen_random_uuid();
+
+UPDATE todos
+SET id_uuid = gen_random_uuid()
+WHERE id_uuid IS NULL;
+
+ALTER TABLE todos DROP CONSTRAINT todos_pkey;
+ALTER TABLE todos DROP COLUMN id;
+
+ALTER TABLE todos RENAME COLUMN id_uuid TO id;
+ALTER TABLE todos ADD PRIMARY KEY (id);
+
+ALTER TABLE todos
+    ADD COLUMN IF NOT EXISTS description TEXT,
+    ADD COLUMN IF NOT EXISTS deadline TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
+    ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
