@@ -71,7 +71,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 
 func Login(w http.ResponseWriter, r *http.Request) {
 	var body model.LoginRequest
-
+	var sessionID int64
 	if err := util.ParseBody(r, &body); err != nil {
 		util.RespondError(w, http.StatusBadRequest, err, "invalid request body")
 		return
@@ -81,18 +81,21 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		util.RespondError(w, http.StatusBadRequest, err, "failed to validate request body")
 		return
 	}
-
-	userID, err := dbhelper.GetUserByEmail(body.Email, body.Password)
-	if err != nil {
-		util.RespondError(w, http.StatusUnauthorized, nil, "invalid credentials")
+	txErr := database.Tx(func(tx *sqlx.Tx) error {
+		userID, err := dbhelper.GetUserByEmail(tx, body.Email, body.Password)
+		if err != nil {
+			return err
+		}
+		sessionID = util.GenerateSessionID()
+		if err := dbhelper.CreateUserSession(tx, userID, sessionID); err != nil {
+			return err
+		}
+		return nil
+	})
+	if txErr != nil {
+		util.RespondError(w, http.StatusInternalServerError, txErr, "invalid credentials")
 		return
 	}
-	sessionID := util.GenerateSessionID()
-	if err := dbhelper.CreateUserSessionOnLogin(userID, sessionID); err != nil {
-		util.RespondError(w, http.StatusInternalServerError, nil, "failed to create session")
-		return
-	}
-
 	util.RespondJSON(w, http.StatusOK, map[string]int64{
 		"sessionId": sessionID,
 	})
@@ -135,6 +138,9 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		if err := dbhelper.DeleteUser(tx, userID); err != nil {
+			return err
+		}
+		if err := dbhelper.DeleteAllTodos(tx, userID); err != nil {
 			return err
 		}
 

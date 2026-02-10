@@ -20,7 +20,7 @@ func SetupRouter() chi.Router {
 		r.Put("/todos/{id}", handler.UpdateTodo)
 		r.Patch("/todos/{id}", handler.UpdateTodoStatus)
 		r.Delete("/todos/{id}", handler.DeleteTodo)
-		r.Delete("/delete-user/{id}", handler.DeleteUser)
+		r.Delete("/delete-user", handler.DeleteUser)
 	})
 	return r
 }

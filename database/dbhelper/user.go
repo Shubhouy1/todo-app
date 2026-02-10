@@ -56,7 +56,7 @@ func CreateUserSessionOnLogin(userId string, sessionID int64) error {
 	return nil
 }
 
-func GetUserByEmail(email, password string) (string, error) {
+func GetUserByEmail(tx *sqlx.Tx, email, password string) (string, error) {
 	query := `
 		SELECT id, password
 		FROM users
@@ -65,7 +65,7 @@ func GetUserByEmail(email, password string) (string, error) {
 	`
 	var result model.UserExist
 
-	err := database.Todo.Get(&result, query, email)
+	err := tx.Get(&result, query, email)
 	if err != nil {
 		return "", err
 	}

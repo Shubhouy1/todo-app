@@ -149,8 +149,33 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
 	daysStr := r.URL.Query().Get("days")
 
-	var selectedDate *time.Time
+	pageStr := r.URL.Query().Get("page")
+	limitStr := r.URL.Query().Get("limit")
 
+	page := 1
+	limit := 10
+
+	if pageStr != "" {
+		p, err := strconv.Atoi(pageStr)
+		if err != nil || p <= 0 {
+			util.RespondError(w, http.StatusBadRequest, nil, "invalid page")
+			return
+		}
+		page = p
+	}
+
+	if limitStr != "" {
+		l, err := strconv.Atoi(limitStr)
+		if err != nil || l <= 0 || l > 100 {
+			util.RespondError(w, http.StatusBadRequest, nil, "invalid limit")
+			return
+		}
+		limit = l
+	}
+
+	offset := (page - 1) * limit
+
+	var selectedDate *time.Time
 	if daysStr != "" {
 		d, err := strconv.Atoi(daysStr)
 		if err != nil || d <= 0 {
@@ -166,11 +191,17 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 		userID,
 		status,
 		selectedDate,
+		limit,
+		offset,
 	)
 	if err != nil {
 		util.RespondError(w, http.StatusInternalServerError, err, "failed to fetch todos")
 		return
 	}
 
-	util.RespondJSON(w, http.StatusOK, todos)
+	util.RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"page":  page,
+		"limit": limit,
+		"data":  todos,
+	})
 }

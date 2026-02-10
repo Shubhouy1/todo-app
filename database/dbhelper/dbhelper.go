@@ -6,6 +6,7 @@ import (
 
 	"github.com/Shubhouy1/todo-app/database"
 	"github.com/Shubhouy1/todo-app/model"
+	"github.com/jmoiron/sqlx"
 )
 
 func CreateTodo(userId, title, status, description string, deadline time.Time) error {
@@ -99,7 +100,14 @@ func DeleteTodo(userID, todoID string) error {
 	return nil
 }
 
-func GetTodos(userID, status string, selectedDate *time.Time) ([]model.Todo, error) {
+func GetTodos(
+	userID string,
+	status string,
+	selectedDate *time.Time,
+	limit int,
+	offset int,
+) ([]model.Todo, error) {
+
 	query := `
 		SELECT id, title, description, status, deadline, created_at
 		FROM todos
@@ -112,11 +120,33 @@ func GetTodos(userID, status string, selectedDate *time.Time) ([]model.Todo, err
 			  $3::timestamp IS NULL OR deadline <= $3::timestamp
 		  )
 		ORDER BY created_at DESC
+		LIMIT $4 OFFSET $5
 	`
 
-	args := []interface{}{userID, status, selectedDate}
+	todos := []model.Todo{}
 
-	todos := make([]model.Todo, 0)
-	err := database.Todo.Select(&todos, query, args...)
+	err := database.Todo.Select(
+		&todos,
+		query,
+		userID,
+		status,
+		selectedDate,
+		limit,
+		offset,
+	)
+
 	return todos, err
+}
+
+func DeleteAllTodos(tx *sqlx.Tx, userID string) error {
+	query := `UPDATE todos 
+            SET archived_at = NOW()
+            WHERE user_id = $1
+            AND archived_at IS NULL`
+
+	_, err := tx.Exec(query, userID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
