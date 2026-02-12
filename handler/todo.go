@@ -13,7 +13,12 @@ import (
 )
 
 func CreateTodo(w http.ResponseWriter, r *http.Request) {
-	auth := middleware.GetAuthContext(r)
+	auth, ok := middleware.GetAuthContext(r)
+	if !ok {
+		util.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+		return
+	}
+
 	userID := auth.UserID
 
 	var todo model.Todo
@@ -39,7 +44,12 @@ func CreateTodo(w http.ResponseWriter, r *http.Request) {
 
 func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 	todoID := chi.URLParam(r, "id")
-	auth := middleware.GetAuthContext(r)
+	auth, ok := middleware.GetAuthContext(r)
+	if !ok {
+		util.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+		return
+	}
+
 	userID := auth.UserID
 
 	var todo model.Todo
@@ -71,7 +81,12 @@ func UpdateTodo(w http.ResponseWriter, r *http.Request) {
 
 func DeleteTodo(w http.ResponseWriter, r *http.Request) {
 	todoID := chi.URLParam(r, "id")
-	auth := middleware.GetAuthContext(r)
+	auth, ok := middleware.GetAuthContext(r)
+	if !ok {
+		util.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+		return
+	}
+
 	userID := auth.UserID
 
 	err := dbhelper.DeleteTodo(userID, todoID)
@@ -85,7 +100,12 @@ func DeleteTodo(w http.ResponseWriter, r *http.Request) {
 
 func UpdateTodoStatus(w http.ResponseWriter, r *http.Request) {
 	todoID := chi.URLParam(r, "id")
-	auth := middleware.GetAuthContext(r)
+	auth, ok := middleware.GetAuthContext(r)
+	if !ok {
+		util.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+		return
+	}
+
 	userID := auth.UserID
 	var body struct {
 		Status string `json:"status" validate:"required,oneof=Completed 'Not Completed' Pending"`
@@ -123,7 +143,12 @@ func UpdateTodoStatus(w http.ResponseWriter, r *http.Request) {
 
 func GetTodoByID(w http.ResponseWriter, r *http.Request) {
 	todoID := chi.URLParam(r, "id")
-	auth := middleware.GetAuthContext(r)
+	auth, ok := middleware.GetAuthContext(r)
+	if !ok {
+		util.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+		return
+	}
+
 	userID := auth.UserID
 
 	todo, err := dbhelper.GetTodoByID(todoID, userID)
@@ -143,7 +168,12 @@ func GetTodoByID(w http.ResponseWriter, r *http.Request) {
 
 // GetTodos remove id filter and make separate api for GetTodobyID
 func GetTodos(w http.ResponseWriter, r *http.Request) {
-	auth := middleware.GetAuthContext(r)
+	auth, ok := middleware.GetAuthContext(r)
+	if !ok {
+		util.RespondError(w, http.StatusUnauthorized, nil, "unauthorized")
+		return
+	}
+
 	userID := auth.UserID
 
 	status := r.URL.Query().Get("status")

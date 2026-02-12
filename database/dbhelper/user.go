@@ -118,7 +118,7 @@ func DeleteUser(tx *sqlx.Tx, userID string) error {
 	return err
 }
 
-func DeleteUserSessionsByUser(tx *sqlx.Tx, userID string) error {
+func DeleteUserSessionsByUserID(tx *sqlx.Tx, userID string) error {
 	query := `
 		UPDATE user_sessions
 		SET archived_at = NOW()
